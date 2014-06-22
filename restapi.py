@@ -4,6 +4,7 @@ __author__ = 'vijay'
 from flask import Flask, request
 from flask.ext import restful
 import time
+from post import getposts, addpost, getfeed, likepost, dislikepost,addmsg,getmsg
 
 app = Flask(__name__)
 api = restful.Api(app)
@@ -15,33 +16,46 @@ class Business(restful.Resource):
             get all the postings
         '''
         print "b_id is %d"%b_id
-        #json = db.get_posts(b_id)
-        pass
+        return getposts(b_id)
 
     def put(self, b_id):
         post = request.form['post']
         #image = request.form['image']
         t = time.time()
         print "post is %s, %d"%(post, t)
-        #db.write(b_id, post, 0, 0, t)
+        addpost(b_id, post, '', 0, 0, t)
+        return 0
 
 class Customer(restful.Resource):
     def get(self, c_id):
         print "customer id is %d", c_id
-        pass
+        return getfeed(c_id)
 
 
 
-class Likes(restful.Resource):
-    def put(self, b_id, post_id):
+class Posts(restful.Resource):
+    def put(self, post_id):
         like = request.form['like']
-        print "customer id %d, post_id %d, like %d",(b_id,post_id, like)
-        #db.write(c_id,post_id, like)
+        print "post_id %d, like %d",(post_id, like)
+        if like == 'True':
+            likepost(post_id)
+        else:
+            dislikepost(post_id)
+
+class Messages(restful.Resource):
+    def get(self, cid, bid):
+        return getmsg(cid, bid)
+
+    def put(self, bid, cid):
+        msg = request.form['message']
+        addmsg(bid, cid, msg, time.time())
+
 
 
 api.add_resource(Business, '/business/<int:b_id>')
 api.add_resource(Customer, '/customer/<int:c_id>')
-api.add_resource(Likes, '/business/<int:b_id>/<int:post_id>')
+api.add_resource(Posts, '/post/<int:post_id>')
+api.add_resource(Messages, '/message/<int:bid>/<int:cid>')
 
 
 if __name__ == '__main__':

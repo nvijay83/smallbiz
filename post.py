@@ -1,21 +1,49 @@
 from tinydb import TinyDB, where
-db = TinyDB('./data/db.json')
+db = TinyDB('.db.json')
 posttable = db.table('posts')
 msgtable = db.table('messages')
 
+def getmax():
+    f = open('.max.db','r')
+    max = int(f.read())
+    f.close()
+    return max
+
+def incrmax():
+    max = getmax()
+    f = open('.max.db','w')
+    max = max + 1
+    f.write(str(max))
+    f.close()
+
 def addpost(bid, post, imageurl, likes, dislikes, ts):
-    posttable.insert({'busid':bid, 'posttext':post, 'url':imageurl, 'n_likes':likes, 'n_dislikes':dislikes, 'timestamp':ts})
+    incrmax()
+    max = getmax()
+    posttable.insert({'postid':max, 'busid':bid, 'posttext':post, 'url':imageurl, 'n_likes':likes, 'n_dislikes':dislikes, 'timestamp':ts})
+
+
+def getposts(bid):
+    return posttable.search((where('busid') == bid))
 
 def likepost(pid):
-    l = posttable.search(where ('_id') == pid)
+    l = posttable.search(where ('postid') == pid)
     if not l:
         return -1
     likes = l[0]['n_likes']
-    likes += 1
-    posttable.update({'n_likes':likes}, where ('_id') == pid)
+    likes = likes + 1
+    posttable.update({'n_likes':likes}, where ('postid') == pid)
     return 0
 
-def addmsg(cid, bid, msg, ts):
+def dislikepost(pid):
+    l = posttable.search(where ('postid') == pid)
+    if not l:
+        return -1
+    likes = l[0]['n_dislikes']
+    likes = likes + 1
+    posttable.update({'n_dislikes':likes}, where ('postid') == pid)
+    return 0
+
+def addmsg(cid, bid, msg=None, ts=None):
     d = msgtable.search((where ('customer_id') == cid) & (where('busid') == bid))
     if not d:
         l = [(msg, ts)]
@@ -45,8 +73,8 @@ def printmsg():
     l = msgtable.all()
     print l
 
-addpost(7, 'testing', 'http://test', 1, 0, 24)
-addmsg(1, 7, 'text msg', 24)
-rec = getfeed(1)
-printpost()
-printmsg()
+#addpost(7, 'testing', 'http://test', 1, 0, 24)
+#addmsg(1, 1)#, 'text msg', 24)
+#rec = getfeed(1)
+#printpost()
+#printmsg()
